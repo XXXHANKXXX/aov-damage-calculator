@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>傳說對決 普攻物傷計算器</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f7f7f7;
+    --card: #ffffff;
+    --border: #d0d0d0;
+    --border-strong: #222222;
+    --text: #111111;
+    --muted: #555555;
+    --dark-box: #1c1c1c;
+    --dark-sub: #2b2b2b;
+    --dark-text: #ffffff;
+    --dark-muted: #cccccc;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.4;
+    padding: 12px;
+  }
+
+  .app-container {
+    max-width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* 頂部共用防守方與控制列 */
+  .top-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .fieldset-box {
+    border: 1px solid var(--border);
+    background: var(--card);
+    padding: 10px 12px;
+    position: relative;
+  }
+
+  .fieldset-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+
+  .target-card {
+    flex: 1;
+    min-width: 300px;
+  }
+
+  .target-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: center;
+  }
+
+  .field-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .field-inline label {
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  select {
+    border: 1px solid #999999;
+    background: #ffffff;
+    color: #111111;
+    padding: 3px 6px;
+    font-size: 13px;
+    height: 26px;
+    outline: none;
+  }
+
+  input[type="text"]:focus,
+  input[type="number"]:focus,
+  select:focus {
+    border-color: #111111;
+  }
+
+  .btn {
+    border: 1px solid var(--border-strong);
+    background: #ffffff;
+    color: #111111;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .btn:hover {
+    background: #111111;
+    color: #ffffff;
+  }
+
+  .btn-sm {
+    padding: 2px 8px;
+    font-size: 12px;
+    height: 24px;
+  }
+
+  .btn-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 16px;
+  }
+
+  /* 多面板橫向容器 */
+  .panels-container {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    align-items: stretch;
+    padding-bottom: 6px;
+  }
+
+  .panel {
+    flex: 1 1 320px;
+    min-width: 320px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title {
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .btn-close {
+    border: none;
+    background: transparent;
+    color: #111111;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0 6px;
+    line-height: 1;
+  }
+
+  .btn-close:hover {
+    background: #111111;
+    color: #ffffff;
+  }
+
+  /* 1. 攻擊方屬性 */
+  .attr-grid {
+    display: grid;
+    grid-template-columns: 1fr 110px;
+    gap: 5px 8px;
+    align-items: center;
+  }
+
+  .attr-grid input,
+  .attr-grid select {
+    width: 100%;
+    text-align: right;
+  }
+
+  .attr-grid select {
+    text-align: left;
+  }
+
+  .checkbox-row {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+    padding-top: 2px;
+  }
+
+  /* 2. 裝備選擇 */
+  .equip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .equip-count {
+    font-weight: 700;
+    font-size: 12px;
+  }
+
+  .equip-list {
+    max-height: 165px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    background: #fafafa;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .equip-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .equip-item label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .equip-item label.disabled {
+    color: #999999;
+    cursor: not-allowed;
+  }
+
+  .equip-desc {
+    color: var(--muted);
+    font-size: 12px;
+    padding-left: 18px;
+  }
+
+  /* 3. 計算結果 */
+  .result-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .mode-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .mode-bar select {
+    flex: 1;
+  }
+
+  .stats-box {
+    background: var(--dark-box);
+    color: var(--dark-text);
+    padding: 8px 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 10px;
+    font-size: 12.5px;
+  }
+
+  .stats-highlight {
+    font-weight: 700;
+  }
+
+  .summary-row {
+    display: flex;
+    gap: 4px;
+  }
+
+  .summary-box {
+    flex: 1;
+    background: var(--dark-sub);
+    color: var(--dark-text);
+    padding: 6px 4px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .summary-box .s-label {
+    font-size: 11.5px;
+    color: var(--dark-muted);
+  }
+
+  .summary-box .s-val {
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  /* 明細表格 */
+  .table-wrap {
+    border: 1px solid var(--border);
+    max-height: 260px;
+    overflow: auto;
+    background: #ffffff;
+    flex: 1;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  th, td {
+    border: 1px solid #e2e2e2;
+    padding: 4px 5px;
+    white-space: nowrap;
+  }
+
+  th {
+    background: #efefef;
+    font-weight: 700;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  tbody tr:nth-child(even) {
+    background: #fafafa;
+  }
+
+  .hit-crit-select {
+    height: 22px;
+    padding: 0 3px;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- 頂部：共用防守方屬性與新增面板按鈕 -->
+  <div class="top-bar">
+    <div class="fieldset-box target-card">
+      <div class="fieldset-title">防守方屬性</div>
+      <div class="target-grid">
+        <div class="field-inline">
+          <label for="target_hp">目標最大生命值:</label>
+          <input type="text" id="target_hp" value="0" style="width: 100px;" data-type="int">
+        </div>
+        <div class="field-inline">
+          <label for="target_armor">目標物理防禦:</label>
+          <input type="text" id="target_armor" value="0" style="width: 100px;" data-type="int">
+        </div>
+        <div class="field-inline">
+          <label for="target_marmor">目標魔法防禦:</label>
+          <input type="text" id="target_marmor" value="0" style="width: 100px;" data-type="int">
+        </div>
+      </div>
+    </div>
+    <button type="button" class="btn btn-add" id="btn_add_panel">+ 新增對照面板</button>
+  </div>
+
+  <!-- 多面板橫向容器 -->
+  <div class="panels-container" id="panels_container"></div>
+</div>
+
+<script>
+const ITEMS_DATA = [
+  { id: 'item1',  name: '鋼鐵長槍',   desc: '造成傷害減少目標6%物防，最多疊加4層', exclusiveGroup: null },
+  { id: 'item2',  name: '龍骨劍',     desc: '普攻附帶目標當前生命值8%物傷', exclusiveGroup: null },
+  { id: 'item3',  name: '聖劍',       desc: '+25% 暴擊率 / 暴擊傷害 +40%', exclusiveGroup: null },
+  { id: 'item4',  name: '天叢雲之刃', desc: '物穿+35% (唯一被動：穿刺)', exclusiveGroup: '穿刺' },
+  { id: 'item5',  name: '颶風雙刀',   desc: '+25% 暴擊率', exclusiveGroup: null },
+  { id: 'item6',  name: '王者之劍',   desc: '對生命值低於50%的敵人造成額外30%傷害', exclusiveGroup: null },
+  { id: 'item7',  name: '雷電戟',     desc: '普攻附帶45~87魔傷 / 每3擊觸發閃電鏈造成150~430魔傷', exclusiveGroup: null },
+  { id: 'item8',  name: '炎怒之爪',   desc: '+20% 暴擊率', exclusiveGroup: null },
+  { id: 'item9',  name: '晨星',       desc: '+10% 暴擊率 / 普攻附帶50物傷(遠程100) / 物穿+20%(遠程40%)(唯一被動：穿刺)', exclusiveGroup: '穿刺' },
+  { id: 'item11', name: '隱襲手弩',   desc: '+20% 暴擊率', exclusiveGroup: null },
+  { id: 'item12', name: '嗜血弓',     desc: '+10% 暴擊率', exclusiveGroup: null },
+  { id: 'item10', name: '日影之弓',   desc: '+10% 暴擊率 / 普攻附帶50物傷(遠程100)', exclusiveGroup: null }
+];
+
+let panels = [];
+let panelSeq = 0;
+
+// 輸入驗證：正整數（禁前導零）
+function sanitizePositiveInt(val) {
+  let cleaned = val.replace(/[^0-9]/g, '');
+  if (cleaned.length > 1 && cleaned.startsWith('0')) {
+    cleaned = cleaned.replace(/^0+/, '') || '0';
+  }
+  return cleaned;
+}
+
+// 輸入驗證：非負浮點數（禁無效前導零）
+function sanitizePositiveFloat(val) {
+  let cleaned = val.replace(/[^0-9.]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2) {
+    cleaned = parts[0] + '.' + parts.slice(1).join('');
+  }
+  if (cleaned.startsWith('.')) {
+    cleaned = '0' + cleaned;
+  }
+  if (cleaned.length > 1 && cleaned.startsWith('0') && !cleaned.startsWith('0.')) {
+    cleaned = cleaned.replace(/^0+/, '') || '0';
+  }
+  return cleaned;
+}
+
+// 輸入驗證：等級 1~15
+function sanitizeLevel(val) {
+  let cleaned = val.replace(/[^0-9]/g, '');
+  if (cleaned === '') return '';
+  if (cleaned.length > 1 && cleaned.startsWith('0')) {
+    cleaned = cleaned.replace(/^0+/, '');
+  }
+  let num = parseInt(cleaned, 10);
+  if (isNaN(num)) return '';
+  if (num > 15) return '15';
+  return String(num);
+}
+
+function getInt(val) {
+  const s = String(val || '').trim();
+  return /^\d+$/.test(s) ? parseInt(s, 10) : 0;
+}
+
+function getFloat(val) {
+  const s = String(val || '').trim();
+  const n = parseFloat(s);
+  return (!isNaN(n) && n >= 0) ? n : 0.0;
+}
+
+// 綁定共用防守方欄位
+['target_hp', 'target_armor', 'target_marmor'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => {
+    el.value = sanitizePositiveInt(el.value);
+    panels.forEach(p => { p.userHitModes = {}; });
+    calculateAllPanels();
+  });
+});
+
+document.getElementById('btn_add_panel').addEventListener('click', addPanel);
+
+function addPanel() {
+  if (panels.length >= 10) {
+    alert('最多只能開啟 10 個對照面板！');
+    return;
+  }
+
+  panelSeq += 1;
+  const uid = panelSeq;
+  const displayIndex = panels.length + 1;
+
+  const pData = {
+    uid: uid,
+    id: displayIndex,
+    heroLevel: '1',
+    heroType: '近戰',
+    heroAd: '0',
+    flatPierce: '0',
+    arcanaCritRate: '0',
+    arcanaCritDmg: '0',
+    runeAxe: false,
+    runeBlessing: false,
+    items: {},
+    calcMode: '期望值計算模式',
+    userHitModes: {},
+    el: null
+  };
+
+  ITEMS_DATA.forEach(it => { pData.items[it.id] = false; });
+
+  const panelEl = document.createElement('div');
+  panelEl.className = 'panel';
+  panelEl.dataset.uid = uid;
+
+  panelEl.innerHTML = `
+    <div class="panel-header">
+      <span class="panel-title">面板 ${displayIndex}</span>
+      <button type="button" class="btn-close" title="關閉面板">✕</button>
+    </div>
+
+    <!-- 1. 攻擊方屬性 -->
+    <div class="fieldset-box">
+      <div class="fieldset-title">1. 攻擊方屬性</div>
+      <div class="attr-grid">
+        <label>英雄等級 (1~15):</label>
+        <input type="text" class="inp-level" value="1">
+
+        <label>攻擊範圍:</label>
+        <select class="inp-type">
+          <option value="近戰" selected>近戰</option>
+          <option value="遠程">遠程</option>
+        </select>
+
+        <label>面板物理攻擊力:</label>
+        <input type="text" class="inp-ad" value="0">
+
+        <label>固定物穿:</label>
+        <input type="text" class="inp-fp" value="0">
+
+        <label>奧義暴擊率(%):</label>
+        <input type="text" class="inp-acr" value="0">
+
+        <label>奧義暴擊傷害(%):</label>
+        <input type="text" class="inp-acd" value="0">
+
+        <label class="checkbox-row">
+          <input type="checkbox" class="inp-axe">
+          <span>魔紋：犧牲之斧</span>
+        </label>
+
+        <label class="checkbox-row">
+          <input type="checkbox" class="inp-bless">
+          <span>魔紋：祝福</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- 2. 裝備選擇 -->
+    <div class="fieldset-box">
+      <div class="fieldset-title">2. 裝備選擇</div>
+      <div class="equip-header">
+        <button type="button" class="btn btn-sm btn-clear">清空裝備</button>
+        <span class="equip-count">已選: 0/6</span>
+      </div>
+      <div class="equip-list">
+        ${ITEMS_DATA.map(item => {
+          const tag = item.exclusiveGroup ? ` [${item.exclusiveGroup}被動互斥]` : '';
+          return `
+            <div class="equip-item">
+              <label data-item-label="${item.id}">
+                <input type="checkbox" data-item-id="${item.id}">
+                <span>${item.name}${tag}</span>
+              </label>
+              <div class="equip-desc">↳ ${item.desc}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- 3. 計算結果與傷害明細 -->
+    <div class="fieldset-box result-card">
+      <div class="fieldset-title">3. 計算結果與傷害明細</div>
+      <div class="mode-bar">
+        <label>暴擊計算模式：</label>
+        <select class="inp-mode" disabled>
+          <option value="期望值計算模式">期望值計算模式</option>
+          <option value="手動控制模式">手動控制模式</option>
+        </select>
+      </div>
+
+      <div class="stats-box">
+        <div class="stats-highlight lbl-crit-rate">總暴擊率：0.0%</div>
+        <div class="stats-highlight lbl-crit-dmg">暴傷倍率：200.0%</div>
+        <div class="lbl-eff-armor">有效物防：0</div>
+        <div class="lbl-armor-red">物防減傷：0.0%</div>
+      </div>
+
+      <div class="summary-row">
+        <div class="summary-box card-min" style="display:none;">
+          <span class="s-label">全暴擊普攻次數</span>
+          <span class="s-val lbl-min-hits">0 次</span>
+        </div>
+        <div class="summary-box card-avg">
+          <span class="s-label lbl-label-avg">普攻次數</span>
+          <span class="s-val lbl-avg-hits">0 次</span>
+        </div>
+        <div class="summary-box card-max" style="display:none;">
+          <span class="s-label">無暴擊普攻次數</span>
+          <span class="s-val lbl-max-hits">0 次</span>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  pData.el = panelEl;
+  document.getElementById('panels_container').appendChild(panelEl);
+  panels.push(pData);
+
+  // 綁定面板事件
+  panelEl.querySelector('.btn-close').addEventListener('click', () => closePanel(pData));
+
+  const inpLevel = panelEl.querySelector('.inp-level');
+  inpLevel.addEventListener('input', () => {
+    inpLevel.value = sanitizeLevel(inpLevel.value);
+    pData.heroLevel = inpLevel.value;
+    onPanelInputChanged(pData);
+  });
+  inpLevel.addEventListener('blur', () => {
+    let v = parseInt(inpLevel.value, 10);
+    if (isNaN(v) || v < 1) v = 1;
+    if (v > 15) v = 15;
+    inpLevel.value = String(v);
+    pData.heroLevel = String(v);
+    onPanelInputChanged(pData);
+  });
+
+  const inpType = panelEl.querySelector('.inp-type');
+  inpType.addEventListener('change', () => {
+    pData.heroType = inpType.value;
+    onPanelInputChanged(pData);
+  });
+
+  const inpAd = panelEl.querySelector('.inp-ad');
+  inpAd.addEventListener('input', () => {
+    inpAd.value = sanitizePositiveInt(inpAd.value);
+    pData.heroAd = inpAd.value;
+    onPanelInputChanged(pData);
+  });
+
+  const inpFp = panelEl.querySelector('.inp-fp');
+  inpFp.addEventListener('input', () => {
+    inpFp.value = sanitizePositiveInt(inpFp.value);
+    pData.flatPierce = inpFp.value;
+    onPanelInputChanged(pData);
+  });
+
+  const inpAcr = panelEl.querySelector('.inp-acr');
+  inpAcr.addEventListener('input', () => {
+    inpAcr.value = sanitizePositiveFloat(inpAcr.value);
+    pData.arcanaCritRate = inpAcr.value;
+    onPanelInputChanged(pData);
+  });
+
+  const inpAcd = panelEl.querySelector('.inp-acd');
+  inpAcd.addEventListener('input', () => {
+    inpAcd.value = sanitizePositiveFloat(inpAcd.value);
+    pData.arcanaCritDmg = inpAcd.value;
+    onPanelInputChanged(pData);
+  });
+
+  const inpAxe = panelEl.querySelector('.inp-axe');
+  inpAxe.addEventListener('change', () => {
+    pData.runeAxe = inpAxe.checked;
+    onPanelInputChanged(pData);
+  });
+
+  const inpBless = panelEl.querySelector('.inp-bless');
+  inpBless.addEventListener('change', () => {
+    pData.runeBlessing = inpBless.checked;
+    onPanelInputChanged(pData);
+  });
+
+  panelEl.querySelector('.btn-clear').addEventListener('click', () => {
+    pData.userHitModes = {};
+    ITEMS_DATA.forEach(it => {
+      pData.items[it.id] = false;
+      const cb = panelEl.querySelector(`input[data-item-id="${it.id}"]`);
+      if (cb) cb.checked = false;
+    });
+    handleItemChange(pData, null);
+  });
+
+  ITEMS_DATA.forEach(item => {
+    const cb = panelEl.querySelector(`input[data-item-id="${item.id}"]`);
+    cb.addEventListener('change', () => {
+      pData.items[item.id] = cb.checked;
+      handleItemChange(pData, item.id);
+    });
+  });
+
+  const inpMode = panelEl.querySelector('.inp-mode');
+  inpMode.addEventListener('change', () => {
+    pData.calcMode = inpMode.value;
+    calculatePanel(pData);
+  });
+
+  calculatePanel(pData);
+}
+
+function closePanel(pData) {
+  if (panels.length <= 1) {
+    alert('必須保留至少一個面板！');
+    return;
+  }
+  pData.el.remove();
+  panels = panels.filter(p => p.uid !== pData.uid);
+  panels.forEach((p, idx) => {
+    p.id = idx + 1;
+    p.el.querySelector('.panel-title').textContent = `面板 ${p.id}`;
+  });
+  calculateAllPanels();
+}
+
+function onPanelInputChanged(pData) {
+  pData.userHitModes = {};
+  calculatePanel(pData);
+}
+
+function handleItemChange(pData, changedId) {
+  pData.userHitModes = {};
+
+  if (changedId === 'item4' && pData.items['item4']) {
+    pData.items['item9'] = false;
+    pData.el.querySelector('input[data-item-id="item9"]').checked = false;
+  } else if (changedId === 'item9' && pData.items['item9']) {
+    pData.items['item4'] = false;
+    pData.el.querySelector('input[data-item-id="item4"]').checked = false;
+  }
+
+  const selectedCount = Object.values(pData.items).filter(Boolean).length;
+  pData.el.querySelector('.equip-count').textContent = `已選: ${selectedCount}/6`;
+
+  ITEMS_DATA.forEach(item => {
+    const itemId = item.id;
+    const cb = pData.el.querySelector(`input[data-item-id="${itemId}"]`);
+    const lbl = pData.el.querySelector(`label[data-item-label="${itemId}"]`);
+    let shouldDisable = false;
+
+    if (itemId === 'item9' && pData.items['item4']) shouldDisable = true;
+    if (itemId === 'item4' && pData.items['item9']) shouldDisable = true;
+    if (selectedCount >= 6 && !pData.items[itemId]) shouldDisable = true;
+
+    cb.disabled = shouldDisable;
+    if (shouldDisable) {
+      lbl.classList.add('disabled');
+    } else {
+      lbl.classList.remove('disabled');
+    }
+  });
+
+  calculatePanel(pData);
+}
+
+function calculateSim(pData, fixedMode, params) {
+  const {
+    targetMaxHp, targetArmor, flatPierce, piercePercent,
+    ad, rawChenXing, rawRiYing, avgCritFactor, critMultiplier,
+    lightFlatRaw, lightChainRaw, magicMultiplier, runeAxeMult
+  } = params;
+
+  let currentHp = targetMaxHp;
+  let steelStacks = 0;
+  let hits = 0;
+
+  function calcEffectiveArmor(rawArmor) {
+    const afterFlat = Math.max(0.0, rawArmor - flatPierce);
+    return Math.max(0.0, afterFlat * (1.0 - piercePercent / 100.0));
+  }
+
+  function getFenrirMult(hp) {
+    return (pData.items['item6'] && hp <= targetMaxHp * 0.5) ? 1.3 : 1.0;
+  }
+
+  while (currentHp > 1e-6 && hits < 200) {
+    hits += 1;
+
+    const armorBefore = targetArmor * (1.0 - steelStacks * 0.06);
+    const effArmorBefore = calcEffectiveArmor(armorBefore);
+    const armorMultBefore = 1.0 - (effArmorBefore / (effArmorBefore + 600.0));
+
+    const baseFenrir = getFenrirMult(currentHp);
+    const baseDamageMult = baseFenrir * runeAxeMult;
+
+    let factor = avgCritFactor;
+    if (fixedMode === 'ALL_CRIT') factor = critMultiplier;
+    else if (fixedMode === 'NO_CRIT') factor = 1.0;
+
+    const baseActual = ad * factor * armorMultBefore * baseDamageMult;
+    currentHp = Math.max(0.0, currentHp - baseActual);
+
+    if (pData.items['item1'] && steelStacks < 4) {
+      steelStacks += 1;
+    }
+
+    const armorAfter = targetArmor * (1.0 - steelStacks * 0.06);
+    const effArmorAfter = calcEffectiveArmor(armorAfter);
+    const armorMultAfter = 1.0 - (effArmorAfter / (effArmorAfter + 600.0));
+
+    let dragonActual = 0.0;
+    if (pData.items['item2'] && currentHp > 0) {
+      dragonActual = (currentHp * 0.08) * armorMultAfter * getFenrirMult(currentHp) * runeAxeMult;
+      currentHp = Math.max(0.0, currentHp - dragonActual);
+    }
+
+    let chenXingActual = 0.0;
+    if (pData.items['item9'] && currentHp > 0) {
+      chenXingActual = rawChenXing * armorMultAfter * getFenrirMult(currentHp) * runeAxeMult;
+      currentHp = Math.max(0.0, currentHp - chenXingActual);
+    }
+
+    let riYingActual = 0.0;
+    if (pData.items['item10'] && currentHp > 0) {
+      riYingActual = rawRiYing * armorMultAfter * getFenrirMult(currentHp) * runeAxeMult;
+      currentHp = Math.max(0.0, currentHp - riYingActual);
+    }
+
+    let lightningActual = 0.0;
+    if (pData.items['item7'] && currentHp > 0) {
+      const rawLight = lightFlatRaw + (hits % 3 === 0 ? lightChainRaw : 0.0);
+      lightningActual = rawLight * magicMultiplier * getFenrirMult(currentHp) * runeAxeMult;
+      currentHp = Math.max(0.0, currentHp - lightningActual);
+    }
+
+    const totalHitDmg = baseActual + dragonActual + chenXingActual + riYingActual + lightningActual;
+    if (totalHitDmg <= 0) break;
+  }
+
+  return hits;
+}
+
+function calculateAllPanels() {
+  panels.forEach(p => calculatePanel(p));
+}
+
+function calculatePanel(pData) {
+  const el = pData.el;
+  const rawLvl = getInt(pData.heroLevel);
+  const level = Math.max(1, Math.min(15, rawLvl || 1));
+  const isRanged = (pData.heroType === '遠程');
+  const ad = getInt(pData.heroAd);
+  const flatPierce = getInt(pData.flatPierce);
+
+  const arcCritRate = getFloat(pData.arcanaCritRate);
+  const arcCritDmg = getFloat(pData.arcanaCritDmg);
+  const hasRuneBlessing = pData.runeBlessing;
+  const hasRuneAxe = pData.runeAxe;
+
+  const runeAxeMult = hasRuneAxe ? 1.03 : 1.0;
+
+  const targetMaxHp = getInt(document.getElementById('target_hp').value);
+  const targetArmor = getInt(document.getElementById('target_armor').value);
+  const targetMarmor = getInt(document.getElementById('target_marmor').value);
+
+  let equipCritRate = 0.0;
+  let equipCritDmgPercent = 0.0;
+  let piercePercent = 0.0;
+
+  if (pData.items['item3']) {
+    equipCritRate += 25.0;
+    equipCritDmgPercent += 40.0;
+  }
+  if (pData.items['item5']) equipCritRate += 25.0;
+  if (pData.items['item8']) equipCritRate += 20.0;
+  if (pData.items['item10']) equipCritRate += 10.0;
+  if (pData.items['item11']) equipCritRate += 20.0;
+  if (pData.items['item12']) equipCritRate += 10.0;
+
+  if (pData.items['item4']) {
+    piercePercent += 35.0;
+  } else if (pData.items['item9']) {
+    equipCritRate += 10.0;
+    piercePercent += isRanged ? 40.0 : 20.0;
+  }
+
+  if (hasRuneBlessing) {
+    equipCritRate *= 1.16;
+  }
+
+  const totalCritRate = Math.min(100.0, arcCritRate + equipCritRate);
+  const totalCritDmgPercent = 200.0 + arcCritDmg + equipCritDmgPercent;
+
+  const rawChenXing = pData.items['item9'] ? (isRanged ? 100.0 : 50.0) : 0.0;
+  const rawRiYing = pData.items['item10'] ? (isRanged ? 100.0 : 50.0) : 0.0;
+
+  const effectiveCritRate = Math.max(0.0, totalCritRate / 100.0);
+  const critMultiplier = totalCritDmgPercent / 100.0;
+  const avgCritFactor = 1.0 + effectiveCritRate * (critMultiplier - 1.0);
+
+  const mArmorRedRate = targetMarmor > 0 ? (targetMarmor / (targetMarmor + 600.0)) : 0.0;
+  const magicMultiplier = 1.0 - mArmorRedRate;
+
+  const lvlFactor = (level - 1) / 14.0;
+  const lightFlatRaw = 45.0 + (87.0 - 45.0) * lvlFactor;
+  const lightChainRaw = 150.0 + (430.0 - 150.0) * lvlFactor;
+
+  function calcEffectiveArmor(rawArmor) {
+    const afterFlat = Math.max(0.0, rawArmor - flatPierce);
+    return Math.max(0.0, afterFlat * (1.0 - piercePercent / 100.0));
+  }
+
+  const initialEffArmor = calcEffectiveArmor(targetArmor);
+  const initialArmorRed = initialEffArmor > 0 ? (initialEffArmor / (initialEffArmor + 600.0)) : 0.0;
+
+  el.querySelector('.lbl-crit-rate').textContent = `總暴擊率：${totalCritRate.toFixed(1)}%`;
+  el.querySelector('.lbl-crit-dmg').textContent = `暴傷倍率：${totalCritDmgPercent.toFixed(1)}%`;
+  el.querySelector('.lbl-eff-armor').textContent = `有效物防：${Math.round(initialEffArmor)}`;
+  el.querySelector('.lbl-armor-red').textContent = `物防減傷：${(initialArmorRed * 100).toFixed(1)}%`;
+
+  const inpMode = el.querySelector('.inp-mode');
+  const cardMin = el.querySelector('.card-min');
+  const cardMax = el.querySelector('.card-max');
+  const lblLabelAvg = el.querySelector('.lbl-label-avg');
+
+  const hasCritAbility = (totalCritRate > 0);
+  let isManual = false;
+
+  if (!hasCritAbility) {
+    pData.calcMode = '期望值計算模式';
+    inpMode.value = '期望值計算模式';
+    inpMode.disabled = true;
+    cardMin.style.display = 'none';
+    cardMax.style.display = 'none';
+    lblLabelAvg.textContent = '普攻次數';
+    isManual = false;
+  } else {
+    inpMode.disabled = false;
+    cardMin.style.display = 'flex';
+    cardMax.style.display = 'flex';
+    isManual = pData.calcMode.includes('手動控制');
+    lblLabelAvg.textContent = isManual ? '當前設定次數' : '期望值普攻次數';
+  }
+
+  // 建立動態表頭
+  const headers = ['次數'];
+  if (isManual) headers.push('暴擊設定');
+  if (pData.items['item1']) headers.push('鋼槍層');
+  headers.push('基礎物傷');
+  if (pData.items['item2']) headers.push('龍骨');
+  if (pData.items['item9']) headers.push('晨星');
+  if (pData.items['item10']) headers.push('日影');
+  if (pData.items['item7']) headers.push('雷電');
+  headers.push('單擊總傷', '剩餘血量');
+
+  const theadRow = el.querySelector('thead tr');
+  const tbody = el.querySelector('tbody');
+  theadRow.innerHTML = headers.map(h => `<th>${h}</th>`).join('');
+  tbody.innerHTML = '';
+
+  if (targetMaxHp <= 0) {
+    el.querySelector('.lbl-min-hits').textContent = '0 次';
+    el.querySelector('.lbl-avg-hits').textContent = '0 次';
+    el.querySelector('.lbl-max-hits').textContent = '0 次';
+    return;
+  }
+
+  const simParams = {
+    targetMaxHp, targetArmor, flatPierce, piercePercent,
+    ad, rawChenXing, rawRiYing, avgCritFactor, critMultiplier,
+    lightFlatRaw, lightChainRaw, magicMultiplier, runeAxeMult
+  };
+
+  if (hasCritAbility) {
+    const minHits = calculateSim(pData, 'ALL_CRIT', simParams);
+    const maxHits = calculateSim(pData, 'NO_CRIT', simParams);
+    el.querySelector('.lbl-min-hits').textContent = `${minHits} 次`;
+    el.querySelector('.lbl-max-hits').textContent = `${maxHits} 次`;
+  }
+
+  let currentHp = targetMaxHp;
+  let steelStacks = 0;
+  let hits = 0;
+
+  function getFenrirMult(hp) {
+    return (pData.items['item6'] && hp <= targetMaxHp * 0.5) ? 1.3 : 1.0;
+  }
+
+  while (currentHp > 1e-6 && hits < 200) {
+    hits += 1;
+    const hitIndex = hits;
+
+    const armorBefore = targetArmor * (1.0 - steelStacks * 0.06);
+    const effArmorBefore = calcEffectiveArmor(armorBefore);
+    const armorMultBefore = 1.0 - (effArmorBefore / (effArmorBefore + 600.0));
+
+    const baseFenrir = getFenrirMult(currentHp);
+    const baseDamageMult = baseFenrir * runeAxeMult;
+
+    let factor = 1.0;
+    let hitMode = 'CRIT';
+
+    if (!hasCritAbility || !isManual) {
+      factor = avgCritFactor;
+    } else {
+      hitMode = pData.userHitModes[hitIndex] || 'CRIT';
+      factor = (hitMode === 'CRIT') ? critMultiplier : 1.0;
+    }
+
+    const baseActual = ad * factor * armorMultBefore * baseDamageMult;
+    currentHp = Math.max(0.0, currentHp - baseActual);
+
+    const stackForDisplay = steelStacks;
+    if (pData.items['item1'] && steelStacks < 4) {
+      steelStacks += 1;
+    }
+
+    const armorAfter = targetArmor * (1.0 - steelStacks * 0.06);
+    const effArmorAfter = calcEffectiveArmor(armorAfter);
+    const armorMultAfter = 1.0 - (effArmorAfter / (effArmorAfter + 600.0));
+
+    let dragonActual = 0.0;
+    if (pData.items['item2'] && currentHp > 0) {
+      dragonActual = (currentHp * 0.08) * armorMultAfter * getFenrirMult(currentHp) * runeAxeMult;
+      currentHp = Math.max(0.0, currentHp - dragonActual);
+    }
+
+    let chenXingActual = 0.0;
+    if (pData.items['item9'] && currentHp > 0) {
+      chenXingActual = rawChenXing * armorMultAfter * getFenrirMult(currentHp) * runeAxeMult;
+      currentHp = Math.max(0.0, currentHp - chenXingActual);
+    }
+
+    let riYingActual = 0.0;
+    if (pData.items['item10'] && currentHp > 0) {
+      riYingActual = rawRiYing * armorMultAfter * getFenrirMult(currentHp) * runeAxeMult;
+      currentHp = Math.max(0.0, currentHp - riYingActual);
+    }
+
+    let lightningActual = 0.0;
+    if (pData.items['item7'] && currentHp > 0) {
+      const rawLight = lightFlatRaw + (hitIndex % 3 === 0 ? lightChainRaw : 0.0);
+      lightningActual = rawLight * magicMultiplier * getFenrirMult(currentHp) * runeAxeMult;
+      currentHp = Math.max(0.0, currentHp - lightningActual);
+    }
+
+    const totalHitDmg = baseActual + dragonActual + chenXingActual + riYingActual + lightningActual;
+    if (totalHitDmg <= 0) break;
+
+    const tr = document.createElement('tr');
+    const cells = [`<td>第 ${hitIndex} 次</td>`];
+
+    if (isManual) {
+      cells.push(`<td>
+        <select class="hit-crit-select" data-hit="${hitIndex}">
+          <option value="CRIT" ${hitMode === 'CRIT' ? 'selected' : ''}>暴擊</option>
+          <option value="NO_CRIT" ${hitMode === 'NO_CRIT' ? 'selected' : ''}>未暴擊</option>
+        </select>
+      </td>`);
+    }
+
+    if (pData.items['item1']) cells.push(`<td>${stackForDisplay}層</td>`);
+    cells.push(`<td>${baseActual.toFixed(1)}</td>`);
+    if (pData.items['item2']) cells.push(`<td>${dragonActual.toFixed(1)}</td>`);
+    if (pData.items['item9']) cells.push(`<td>${chenXingActual.toFixed(1)}</td>`);
+    if (pData.items['item10']) cells.push(`<td>${riYingActual.toFixed(1)}</td>`);
+    if (pData.items['item7']) cells.push(`<td>${lightningActual.toFixed(1)}</td>`);
+    cells.push(`<td>${totalHitDmg.toFixed(1)}</td>`, `<td>${currentHp.toFixed(1)}</td>`);
+
+    tr.innerHTML = cells.join('');
+    tbody.appendChild(tr);
+
+    if (isManual) {
+      const sel = tr.querySelector('.hit-crit-select');
+      sel.addEventListener('change', () => {
+        pData.userHitModes[hitIndex] = sel.value;
+        calculatePanel(pData);
+      });
+    }
+  }
+
+  el.querySelector('.lbl-avg-hits').textContent = `${hits} 次`;
+}
+
+// 預設建立第一個面板
+addPanel();
+</script>
+</body>
+</html>
