@@ -197,8 +197,8 @@
   /* 1. 攻擊方屬性 */
   .attr-grid {
     display: grid;
-    grid-template-columns: 1fr 110px;
-    gap: 5px 8px;
+    grid-template-columns: max-content 110px;
+    gap: 5px 14px;
     align-items: center;
   }
 
@@ -603,8 +603,6 @@ function addPanel() {
       <div class="stats-box">
         <div class="stats-highlight lbl-crit-rate">總暴擊率：0.0%</div>
         <div class="stats-highlight lbl-crit-dmg">暴傷倍率：200.0%</div>
-        <div class="lbl-eff-armor">有效物防：0</div>
-        <div class="lbl-armor-red">物防減傷：0.0%</div>
       </div>
 
       <div class="summary-row">
@@ -927,13 +925,8 @@ function calculatePanel(pData) {
     return Math.max(0.0, afterFlat * (1.0 - piercePercent / 100.0));
   }
 
-  const initialEffArmor = calcEffectiveArmor(targetArmor);
-  const initialArmorRed = initialEffArmor > 0 ? (initialEffArmor / (initialEffArmor + 600.0)) : 0.0;
-
   el.querySelector('.lbl-crit-rate').textContent = `總暴擊率：${totalCritRate.toFixed(1)}%`;
   el.querySelector('.lbl-crit-dmg').textContent = `暴傷倍率：${totalCritDmgPercent.toFixed(1)}%`;
-  el.querySelector('.lbl-eff-armor').textContent = `有效物防：${Math.round(initialEffArmor)}`;
-  el.querySelector('.lbl-armor-red').textContent = `物防減傷：${(initialArmorRed * 100).toFixed(1)}%`;
 
   const inpMode = el.querySelector('.inp-mode');
   const cardMin = el.querySelector('.card-min');
